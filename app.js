@@ -2,6 +2,7 @@
 const express=require('express');
 const bcrypt=require('bcrypt')
 const cors=require('cors')
+const jwt=require('jsonwebtoken')
 const app=express();
 const port=3000
 let connection=require('./config/db')
@@ -9,6 +10,8 @@ app.use(cors())  //middleware
 app.use(express.json())
 let productmodel=require('./models/productmodel')
 let usermodel=require('./models/usermodel')
+
+
 //HEALTH CHECK
 app.get('/status',(req,res)=>{
     res.send('server is active')
@@ -79,6 +82,34 @@ app.post('/register',async (req,res)=>{
   } catch (error) {
         res.json({"msg":error.message})
   }
+})
+
+
+app.post('/login',async (req,res)=>{
+try { 
+const {email,password}=req.body;
+if(!email || !password){
+  return res.json({msg:'missing fields'})
+}
+
+let users = await usermodel.findOne({email})
+
+if(!users) return res.json({'msg':'invalid credentials'}) 
+
+let checkpassword=await bcrypt.compare(password,users.password)
+if(!checkpassword) return res.json({msg:'invalid credentials'})
+//create a token
+let payload={
+  email:users.email,
+  userid:users._id
+}
+let secretkey='Rohansecret'
+let token=jwt.sign(payload,secretkey,{expiresIn:'1h'})
+
+res.json({msg:'LOGIN SUCCESFULL',token})
+} catch (error) {
+  res.json({msg: error.message})
+}
 })
 
 
