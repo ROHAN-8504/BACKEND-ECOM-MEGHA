@@ -1,36 +1,14 @@
 //create a server
 const express=require('express');
-const mongoose=require('mongoose')
+const bcrypt=require('bcrypt')
 const cors=require('cors')
 const app=express();
 const port=3000
+let connection=require('./config/db')
 app.use(cors())  //middleware
 app.use(express.json())
-
-//s2-estabish a conecction
-async function connection(){
-   await mongoose.connect('mongodb://localhost:27017/meghabackend')
-}
-
-//s3-create a schema
-let productschema=new mongoose.Schema({
-    title:{
-        type:String,
-        required:true
-    },
-    price:{
-        type:Number,
-        required:true
-    },
-    image:{
-        type:String,
-        required:true
-    }
-})
-
-//s4-create a model
-let productmodel=mongoose.model('products',productschema)
-
+let productmodel=require('./models/productmodel')
+let usermodel=require('./models/usermodel')
 //HEALTH CHECK
 app.get('/status',(req,res)=>{
     res.send('server is active')
@@ -81,6 +59,28 @@ app.put('/products/:id',async (req,res)=>{
   }
 
 })
+
+//register
+app.post('/register',async (req,res)=>{
+  try {
+    const {username,password,email,role}=req.body
+
+  if(!username || !password || !email )
+  {
+    return  res.json({'msg':'missing fields'})
+  }
+
+  let saferole=role==='seller'?'seller':'customer'
+  let userexist=await usermodel.findOne({email})
+  if(userexist) return res.json({'msg':'user already exists'})
+  let hashpassword= await bcrypt.hash(password,10)
+  await usermodel.create({username,password:hashpassword,email,role:saferole})
+  res.json({msg:'REGISTRATION SUCCESSFULL'})
+  } catch (error) {
+        res.json({"msg":error.message})
+  }
+})
+
 
 
 app.listen(port,async ()=>{
