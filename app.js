@@ -2,9 +2,10 @@
 const express=require('express');
 const bcrypt=require('bcrypt')
 const cors=require('cors')
+require('dotenv').config()
 const jwt=require('jsonwebtoken')
 const app=express();
-const port=3000
+const port=process.env.PORT
 let connection=require('./config/db')
 app.use(cors())  //middleware
 app.use(express.json())
@@ -103,8 +104,8 @@ let payload={
   email:users.email,
   userid:users._id
 }
-let secretkey='Rohansecret'
-let token=jwt.sign(payload,secretkey,{expiresIn:'1h'})
+let secretkey=process.env.SECRETKEY
+let token=jwt.sign(payload,secretkey,{expiresIn:'7d'})
 
 res.json({msg:'LOGIN SUCCESFULL',token})
 } catch (error) {
