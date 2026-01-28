@@ -3,6 +3,7 @@ const express=require('express');
 const bcrypt=require('bcrypt')
 const cors=require('cors')
 require('dotenv').config()
+const nodemailer=require('nodemailer')
 const jwt=require('jsonwebtoken')
 const app=express();
 const port=process.env.PORT
@@ -81,6 +82,32 @@ app.post('/register',async (req,res)=>{
   if(userexist) return res.json({'msg':'user already exists'})
   let hashpassword= await bcrypt.hash(password,10)
   await usermodel.create({username,password:hashpassword,email,role:saferole})
+
+ //logic to send a mail
+
+ let transporter=nodemailer.createTransport({
+  service:'gmail',
+  auth:{
+   user:process.env.GMAIL_USER,
+   pass:process.env.GMAIL_APP_PASSWORD
+  }
+ })
+
+const mailOptions = {
+  from: process.env.GMAIL_USER,
+    to: email, 
+  subject: 'ACCOUNT CREATION',
+  text: 'Hello! This is a your account details.',
+  html: `
+    <h2>hi ${username} your account is created succesfully/h2>
+  `
+};
+
+transporter.sendMail(mailOptions,(err)=>{
+  if(err) throw err;
+  console.log('email sent')
+})
+
   res.json({msg:'REGISTRATION SUCCESSFULL'})
   } catch (error) {
         res.json({"msg":error.message})
