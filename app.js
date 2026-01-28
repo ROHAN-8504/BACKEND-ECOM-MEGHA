@@ -7,8 +7,10 @@ const jwt=require('jsonwebtoken')
 const app=express();
 const port=process.env.PORT
 let connection=require('./config/db')
+let limiter=require('./middlewares/ratelimit')
 app.use(cors())  //middleware
 app.use(express.json())
+app.use(limiter)
 let productmodel=require('./models/productmodel')
 let usermodel=require('./models/usermodel')
 
