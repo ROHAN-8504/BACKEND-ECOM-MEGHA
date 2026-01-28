@@ -99,7 +99,7 @@ const mailOptions = {
   subject: 'ACCOUNT CREATION',
   text: 'Hello! This is a your account details.',
   html: `
-    <h2>hi ${username} your account is created succesfully/h2>
+    <h2>hi ${username} your account is created succesfully</h2>
   `
 };
 
