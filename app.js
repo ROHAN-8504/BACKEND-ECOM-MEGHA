@@ -1,5 +1,6 @@
 //create a server
 const express=require('express');
+const { GoogleGenAI } =require("@google/genai");
 const bcrypt=require('bcrypt')
 const cors=require('cors')
 require('dotenv').config()
@@ -16,16 +17,35 @@ let productmodel=require('./models/productmodel')
 let usermodel=require('./models/usermodel')
 
 
+
+
+app.post('/aichat',async (req,res)=>{
+
+  const ai = new GoogleGenAI({apiKey:process.env.GEMINIKEY});
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: req.body.prompt,
+    });
+   res.json(response.text)
+
+})
+
+
+
+
+
+
+
 //HEALTH CHECK
 app.get('/status',(req,res)=>{
-    res.send('server is active')
+  res.send('server is active')
 })
 
 //API2-IF I RECIEVE ANY DATA FROM THE CLIENT I WILL
 //STORE IN DB
 
 app.post('/products',async (req,res)=>{
-    try {
+  try {
         const {title,image,price}=req.body
       await  productmodel.create({title,image,price})
       res.status(201).json({"msg":'products are added'})
@@ -33,7 +53,7 @@ app.post('/products',async (req,res)=>{
         res.json({
             msg:error.message
         })
-    }
+      }
 })
 
 app.get('/products',async (req,res)=>{
@@ -41,19 +61,19 @@ try {
   let products= await productmodel.find()
   res.status(200).json(products)
 } catch (error) {
-    res.json({"msg":error.message})
+  res.json({"msg":error.message})
 }
 })
 
 
 app.delete('/products/:id',async (req,res)=>{
- try {
+  try {
    let productid=req.params.id
-  await productmodel.findByIdAndDelete(productid)
+   await productmodel.findByIdAndDelete(productid)
   res.json({msg:'product is deleted'})
- } catch (error) {
-    res.json({msg:error.message})
- }
+} catch (error) {
+  res.json({msg:error.message})
+}
 })
 
 app.put('/products/:id',async (req,res)=>{
@@ -64,7 +84,7 @@ app.put('/products/:id',async (req,res)=>{
   } catch (error) {
     res.json({"msg":error.message})
   }
-
+  
 })
 
 //register
@@ -76,30 +96,30 @@ app.post('/register',async (req,res)=>{
   {
     return  res.json({'msg':'missing fields'})
   }
-
+  
   let saferole=role==='seller'?'seller':'customer'
   let userexist=await usermodel.findOne({email})
   if(userexist) return res.json({'msg':'user already exists'})
-  let hashpassword= await bcrypt.hash(password,10)
+    let hashpassword= await bcrypt.hash(password,10)
   await usermodel.create({username,password:hashpassword,email,role:saferole})
-
- //logic to send a mail
-
- let transporter=nodemailer.createTransport({
-  service:'gmail',
-  auth:{
+  
+  //logic to send a mail
+  
+  let transporter=nodemailer.createTransport({
+    service:'gmail',
+    auth:{
    user:process.env.GMAIL_USER,
    pass:process.env.GMAIL_APP_PASSWORD
   }
  })
-
+ 
 const mailOptions = {
   from: process.env.GMAIL_USER,
-    to: email, 
+  to: email, 
   subject: 'ACCOUNT CREATION',
   text: 'Hello! This is a your account details.',
   html: `
-    <h2>hi ${username} your account is created succesfully</h2>
+  <h2>hi ${username} your account is created succesfully</h2>
   `
 };
 
@@ -108,16 +128,16 @@ transporter.sendMail(mailOptions,(err)=>{
   console.log('email sent')
 })
 
-  res.json({msg:'REGISTRATION SUCCESSFULL'})
-  } catch (error) {
-        res.json({"msg":error.message})
-  }
+res.json({msg:'REGISTRATION SUCCESSFULL'})
+} catch (error) {
+  res.json({"msg":error.message})
+}
 })
 
 
 app.post('/login',async (req,res)=>{
 try { 
-const {email,password}=req.body;
+  const {email,password}=req.body;
 if(!email || !password){
   return res.json({msg:'missing fields'})
 }
@@ -125,10 +145,10 @@ if(!email || !password){
 let users = await usermodel.findOne({email})
 
 if(!users) return res.json({'msg':'invalid credentials'}) 
-
-let checkpassword=await bcrypt.compare(password,users.password)
-if(!checkpassword) return res.json({msg:'invalid credentials'})
-//create a token
+  
+  let checkpassword=await bcrypt.compare(password,users.password)
+  if(!checkpassword) return res.json({msg:'invalid credentials'})
+    //create a token
 let payload={
   email:users.email,
   userid:users._id
@@ -142,11 +162,13 @@ res.json({msg:'LOGIN SUCCESFULL',token})
 }
 })
 
+//AI CHAT
+
 
 
 app.listen(port,async ()=>{
-    console.log(`the server is running on ${port}`)
-    connection();
+  console.log(`the server is running on ${port}`)
+  connection();
     console.log('DB connectED')
 
 })
